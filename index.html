@@ -5257,7 +5257,12 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
         };
 
         function openRecordAbsenceModal() {
-            // Reset state
+            // Ensure state is synced from localStorage
+            if (window.syncLocalVariableWithWindowState) {
+                window.syncLocalVariableWithWindowState();
+            }
+            
+            // Reset modal state
             absenceModalState = {
                 selectedTeacherId: null,
                 selectedDays: [],
@@ -5287,7 +5292,15 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
         function renderAbsentTeacherDropdown() {
             const select = document.getElementById('absent-teacher-select');
             select.innerHTML = '<option value="">Select a teacher...</option>';
+            
+            // Use local state (synced from localStorage)
             const sortedTeachers = getSortedTeachers();
+            
+            if (sortedTeachers.length === 0) {
+                select.innerHTML = '<option value="">No teachers found. Add a teacher first.</option>';
+                return;
+            }
+            
             sortedTeachers.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
@@ -6459,17 +6472,22 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             });
         }
 
+        function getSortedTeachers() {
+            return [...state.teachers].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
         function renderAll() {
             const absentSelect = document.getElementById('absent-teacher-select');
             const schedTeacherSelect = document.getElementById('schedule-teacher-select');
             const matrixFilterSelect = document.getElementById('matrix-teacher-filter');
 
             const currentFilterVal = matrixFilterSelect.value;
+            const sortedTeachers = getSortedTeachers();
 
             [absentSelect, schedTeacherSelect].forEach(select => {
                 const currentVal = select.value;
                 select.innerHTML = '<option value="">Select Teacher...</option>';
-                state.teachers.forEach(t => {
+                sortedTeachers.forEach(t => {
                     const opt = document.createElement('option');
                     opt.value = t.id;
                     opt.textContent = `${t.name} (${t.dept})`;
@@ -6479,7 +6497,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             });
 
             matrixFilterSelect.innerHTML = '<option value="ALL">Show All Teachers</option>';
-            state.teachers.forEach(t => {
+            sortedTeachers.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.textContent = `${t.name} (${t.dept})`;
