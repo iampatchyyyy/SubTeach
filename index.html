@@ -2743,266 +2743,70 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
     </div>
 
     <div id="record-absence-modal" class="modal-overlay">
-        <div class="modal modal-lg" style="max-width: 1100px;">
+        <div class="modal modal-lg">
             <div class="modal-header">
-                <h2>Record Absent Teacher & Assign Substitutes</h2>
+                <h2>Record Absent Teacher & Assign Substitute</h2>
                 <button class="close-btn" onclick="closeRecordAbsenceModal()">&times;</button>
             </div>
             
-            <!-- Step-by-Step Progress Bar -->
-            <div style="display: flex; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
-                <div id="step-1-indicator" class="step-indicator active">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Choose Teacher</div>
-                </div>
-                <div id="step-2-indicator" class="step-indicator">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Select Days</div>
-                </div>
-                <div id="step-3-indicator" class="step-indicator">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Assign Subs</div>
-                </div>
-                <div id="step-4-indicator" class="step-indicator">
-                    <div class="step-number">4</div>
-                    <div class="step-label">Review & Save</div>
-                </div>
-            </div>
-
             <form id="absence-form" onsubmit="handleAbsenceSubmit(event)">
-                <!-- STEP 1: Choose Teacher -->
-                <div id="step-1-content" class="step-content active">
-                    <div class="step-title">Step 1: Choose Teacher</div>
-                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.9rem;">Select the teacher who will be absent.</p>
-                    
+                <div class="grid-2">
                     <div class="form-group">
-                        <select id="absent-teacher-select" required onchange="advanceToStep2()">
-                            <option value="">Select a teacher...</option>
+                        <label>Date of Absence / Substitution</label>
+                        <input type="date" id="absent-date-input" required onchange="syncDayFromDate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Day of Week</label>
+                        <select id="absent-day-select" required onchange="renderWholeDaySchedule()">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- STEP 2: Select Days (Calendar) -->
-                <div id="step-2-content" class="step-content" style="display: none;">
-                    <div class="step-title">Step 2: Select Absent Days</div>
-                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.9rem;">Click on days to mark when the teacher will be absent. You can select multiple consecutive days.</p>
-                    
-                    <div class="calendar-container">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="previousWeek()">&larr; Previous Week</button>
-                            <h3 id="calendar-week-label" style="margin: 0; font-size: 1.1rem;"></h3>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="nextWeek()">Next Week &rarr;</button>
-                        </div>
+                <div class="form-group">
+                    <label>Absent Teacher</label>
+                    <select id="absent-teacher-select" required onchange="renderWholeDaySchedule()">
+                        <option value="">Select Teacher...</option>
+                    </select>
+                </div>
 
-                        <div id="absence-calendar" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;"></div>
-
-                        <div style="margin-top: 16px; padding: 12px; background: var(--sub-card-bg); border-radius: 6px; border: 1px solid var(--border);">
-                            <strong style="display: block; margin-bottom: 8px;">Selected Days:</strong>
-                            <div id="selected-days-display" style="font-size: 0.9rem; color: var(--text-muted);">None selected yet</div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 8px; justify-content: space-between; margin-top: 16px;">
-                        <button type="button" class="btn btn-secondary" onclick="backToStep1()">Back</button>
-                        <button type="button" class="btn" onclick="advanceToStep3()" id="btn-advance-to-step3" disabled>Next: Assign Substitutes</button>
+                <div class="form-group" style="background: var(--sub-card-bg); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <label style="font-weight: 700; margin-bottom: 8px;">
+                        Absence Scope / Duration:
+                        <span class="help-icon" tabindex="0">?
+                            <span class="help-tooltip-popup">
+                                <strong>Full vs. Partial Absence</strong>
+                                • <em>Full Day:</em> Replaces all classes.<br>
+                                • <em>Partial:</em> Lets you toggle individual periods to sub.
+                                <br><span class="help-tooltip-link" onclick="switchTab('help-tab')">Open Help & Guide →</span>
+                            </span>
+                        </span>
+                    </label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="radio" name="absenceScope" value="FULL" checked onchange="toggleAbsenceScope(this.value)"> 
+                            Full Day Absence
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="radio" name="absenceScope" value="PARTIAL" onchange="toggleAbsenceScope(this.value)"> 
+                            Partial / Half Day Absence
+                        </label>
                     </div>
                 </div>
 
-                <!-- STEP 3: Assign Substitutes (Split Layout) -->
-                <div id="step-3-content" class="step-content" style="display: none;">
-                    <div class="step-title">Step 3: Assign Substitutes</div>
-                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.9rem;">Review the teacher's schedule on the left, then select the best substitute for each class on the right.</p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-height: 500px; overflow-y: auto;">
-                        <!-- Left: Teacher Schedule -->
-                        <div>
-                            <h4 style="margin-bottom: 12px; color: var(--primary);">📚 Teacher's Schedule</h4>
-                            <div id="teacher-schedule-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-                        </div>
+                <div id="whole-day-schedule-container" style="margin-top: 16px;"></div>
 
-                        <!-- Right: Substitute Suggestions -->
-                        <div>
-                            <h4 style="margin-bottom: 12px; color: var(--primary);">🔄 Select Substitutes</h4>
-                            <div id="substitutes-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 8px; justify-content: space-between; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
-                        <button type="button" class="btn btn-secondary" onclick="backToStep2()">Back</button>
-                        <button type="button" class="btn" onclick="advanceToStep4()">Next: Review & Save</button>
-                    </div>
-                </div>
-
-                <!-- STEP 4: Review & Save (Integrated Slip Preview) -->
-                <div id="step-4-content" class="step-content" style="display: none;">
-                    <div class="step-title">Step 4: Review & Save Substitution Record</div>
-                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.9rem;">Review the official substitution slip below, then save to record the absence.</p>
-                    
-                    <div id="integrated-slip-preview" class="slip-container"></div>
-
-                    <div style="display: flex; gap: 8px; justify-content: space-between; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
-                        <button type="button" class="btn btn-secondary" onclick="backToStep3()">Back</button>
-                        <button type="submit" class="btn btn-success" onclick="finalizeAndSaveRecord()">✅ Confirm & Save Record</button>
-                    </div>
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecordAbsenceModal()">Cancel</button>
+                    <button type="submit" id="btn-submit-sub" class="btn" style="display: none;">Assign Substitute & Record</button>
                 </div>
             </form>
         </div>
     </div>
-
-    <style>
-        .step-indicator {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            opacity: 0.5;
-            transition: all 0.2s;
-        }
-
-        .step-indicator.active {
-            opacity: 1;
-        }
-
-        .step-indicator.completed {
-            opacity: 0.7;
-        }
-
-        .step-number {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--table-header-bg);
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-
-        .step-indicator.active .step-number {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-        }
-
-        .step-indicator.completed .step-number {
-            background: var(--success);
-            color: white;
-        }
-
-        .step-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-align: center;
-            color: var(--text-muted);
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .step-indicator.active .step-label {
-            color: var(--primary);
-            font-weight: 700;
-        }
-
-        .step-content {
-            display: none;
-            animation: fadeIn 0.2s ease-in;
-        }
-
-        .step-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .step-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 12px;
-        }
-
-        .calendar-day-button {
-            padding: 12px;
-            border: 2px solid var(--border);
-            background: var(--card-bg);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .calendar-day-button:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .calendar-day-button.selected {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .calendar-day-button.outside-range {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .substitute-card {
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: var(--card-bg);
-        }
-
-        .substitute-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .substitute-card.selected {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .substitute-card.recommended::before {
-            content: "⭐ RECOMMENDED";
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: var(--warning);
-            margin-bottom: 6px;
-        }
-
-        .substitute-card.selected.recommended::before {
-            color: #fbbf24;
-        }
-
-        .sub-card-name {
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .sub-card-dept {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-bottom: 6px;
-        }
-
-        .sub-card-workload {
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-    </style>
 
     <div id="edit-block-modal" class="modal-overlay">
         <div class="modal">
@@ -4916,12 +4720,51 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
 
         function handleAbsenceSubmit(e) {
             e.preventDefault();
-            finalizeAndSaveRecord();
+            const teacherId = document.getElementById('absent-teacher-select').value;
+            const absentTeacher = state.teachers.find(t => t.id === teacherId);
+            const day = document.getElementById('absent-day-select').value;
+            const subDate = document.getElementById('absent-date-input').value;
+            const selects = document.querySelectorAll('.period-sub-select');
+
+            const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            let pendingRecords = [];
+            let unassignedCount = 0;
+
+            selects.forEach(select => {
+                const classId = select.getAttribute('data-class-id');
+                
+                if (absenceScope === 'PARTIAL') {
+                    const check = document.querySelector(`.period-toggle-checkbox[data-class-id="${classId}"]`);
+                    if (!check || !check.checked) return;
+                }
+
+                const subTeacherId = select.value;
+                if (subTeacherId === 'NO_AVAILABLE' || !subTeacherId) unassignedCount++;
+
+                const record = {
+                    id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                    batchId,
+                    day,
+                    subDate,
+                    absentTeacherId: teacherId,
+                    classId,
+                    subTeacherId: (subTeacherId === 'NO_AVAILABLE' || !subTeacherId) ? 'NO_AVAILABLE' : subTeacherId,
+                    issuedTimestamp: new Date().toLocaleString()
+                };
+                pendingRecords.push(record);
+            });
+
+            if (pendingRecords.length === 0) {
+                alert("Please select at least one class period to substitute.");
+                return;
+            }
+
+            pendingRecordsToSave = pendingRecords;
+
+            openPreviewModal(absentTeacher, day, subDate, pendingRecords, true);
         }
 
         function confirmAndSaveRecord() {
-            // This function is kept for backward compatibility with the preview modal
-            // but the main flow now uses finalizeAndSaveRecord in the integrated modal
             let savedBatchId = null;
             let absentTeacher = null;
             if (pendingRecordsToSave && pendingRecordsToSave.length > 0) {
@@ -4935,6 +4778,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             }
             
             closePreviewModal();
+            closeRecordAbsenceModal();
 
             showToast('SUB RECORDED', `Substitution saved for ${absentTeacher ? absentTeacher.name : 'Teacher'}.`, 'sub', () => {
                 if (savedBatchId) openPreviewFromBatch(savedBatchId);
@@ -5247,435 +5091,19 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             document.getElementById('edit-block-modal').classList.add('active');
         }
 
-        // State for multi-day absence selection
-        let absenceModalState = {
-            selectedTeacherId: null,
-            selectedDays: [],
-            currentWeekStart: new Date(),
-            substitutes: {}, // classId -> selected subTeacherId
-            pendingRecords: null
-        };
-
         function openRecordAbsenceModal() {
-            // Ensure state is synced from localStorage
-            if (window.syncLocalVariableWithWindowState) {
-                window.syncLocalVariableWithWindowState();
-            }
-            
-            // Reset modal state
-            absenceModalState = {
-                selectedTeacherId: null,
-                selectedDays: [],
-                currentWeekStart: getMonday(new Date()),
-                substitutes: {},
-                pendingRecords: null
-            };
-
-            // Show Step 1
-            showStep(1);
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('absent-date-input').value = todayStr;
+            syncDayFromDate();
             document.getElementById('record-absence-modal').classList.add('active');
-            renderAbsentTeacherDropdown();
         }
 
         function closeRecordAbsenceModal() {
             document.getElementById('record-absence-modal').classList.remove('active');
             document.getElementById('absence-form').reset();
-            absenceModalState = {
-                selectedTeacherId: null,
-                selectedDays: [],
-                currentWeekStart: new Date(),
-                substitutes: {},
-                pendingRecords: null
-            };
-        }
-
-        function renderAbsentTeacherDropdown() {
-            const select = document.getElementById('absent-teacher-select');
-            select.innerHTML = '<option value="">Select a teacher...</option>';
-            
-            // Use local state (synced from localStorage)
-            const sortedTeachers = getSortedTeachers();
-            
-            if (sortedTeachers.length === 0) {
-                select.innerHTML = '<option value="">No teachers found. Add a teacher first.</option>';
-                return;
-            }
-            
-            sortedTeachers.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = `${t.name} (${t.dept})`;
-                select.appendChild(opt);
-            });
-        }
-
-        function showStep(stepNum) {
-            // Hide all steps
-            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.step-indicator').forEach(el => {
-                el.classList.remove('active');
-                el.classList.add('completed');
-            });
-
-            // Show current step
-            const stepContent = document.getElementById(`step-${stepNum}-content`);
-            const stepIndicator = document.getElementById(`step-${stepNum}-indicator`);
-
-            if (stepContent) stepContent.classList.add('active');
-            if (stepIndicator) {
-                stepIndicator.classList.add('active');
-                stepIndicator.classList.remove('completed');
-            }
-
-            // Mark previous steps as completed
-            for (let i = 1; i < stepNum; i++) {
-                const prevIndicator = document.getElementById(`step-${i}-indicator`);
-                if (prevIndicator) {
-                    prevIndicator.classList.remove('active');
-                    prevIndicator.classList.add('completed');
-                }
-            }
-        }
-
-        function advanceToStep2() {
-            const teacherId = document.getElementById('absent-teacher-select').value;
-            if (!teacherId) {
-                alert('Please select a teacher');
-                return;
-            }
-            absenceModalState.selectedTeacherId = teacherId;
-            showStep(2);
-            renderCalendar();
-        }
-
-        function backToStep1() {
-            showStep(1);
-        }
-
-        function advanceToStep3() {
-            if (absenceModalState.selectedDays.length === 0) {
-                alert('Please select at least one day');
-                return;
-            }
-            showStep(3);
-            renderScheduleAndSuggestions();
-        }
-
-        function backToStep2() {
-            showStep(2);
-        }
-
-        function advanceToStep4() {
-            showStep(4);
-            renderIntegratedSlipPreview();
-        }
-
-        function backToStep3() {
-            showStep(3);
-        }
-
-        function getMonday(date) {
-            const d = new Date(date);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.setDate(diff));
-        }
-
-        function previousWeek() {
-            absenceModalState.currentWeekStart.setDate(absenceModalState.currentWeekStart.getDate() - 7);
-            renderCalendar();
-        }
-
-        function nextWeek() {
-            absenceModalState.currentWeekStart.setDate(absenceModalState.currentWeekStart.getDate() + 7);
-            renderCalendar();
-        }
-
-        function renderCalendar() {
-            const container = document.getElementById('absence-calendar');
-            const weekStart = absenceModalState.currentWeekStart;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            container.innerHTML = '';
-
-            // Week label
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 4);
-            const monthLabel = weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            const dateRange = `${weekStart.getDate()} - ${weekEnd.getDate()} ${monthLabel}`;
-            document.getElementById('calendar-week-label').innerText = dateRange;
-
-            // Create day buttons for Mon-Fri only
-            for (let i = 0; i < 5; i++) {
-                const dayDate = new Date(weekStart);
-                dayDate.setDate(dayDate.getDate() + i);
-                dayDate.setHours(0, 0, 0, 0);
-
-                const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'short' });
-                const dayNum = dayDate.getDate();
-                const isToday = dayDate.getTime() === today.getTime();
-                const isSelected = absenceModalState.selectedDays.some(d => d.getTime() === dayDate.getTime());
-                const isPast = dayDate < today;
-
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `calendar-day-button ${isSelected ? 'selected' : ''} ${isPast ? 'outside-range' : ''}`;
-                btn.disabled = isPast;
-                btn.innerHTML = `<div style="font-size:0.8rem; opacity:0.7;">${dayName}</div><div style="font-size:1.2rem;">${dayNum}</div>`;
-                
-                if (isToday) {
-                    btn.style.borderColor = 'var(--primary)';
-                    btn.innerHTML += '<div style="font-size:0.7rem; opacity:0.7;">Today</div>';
-                }
-
-                btn.onclick = (e) => {
-                    e.preventDefault();
-                    toggleAbsenceDay(dayDate);
-                };
-
-                container.appendChild(btn);
-            }
-
-            updateSelectedDaysDisplay();
-        }
-
-        function toggleAbsenceDay(dayDate) {
-            const index = absenceModalState.selectedDays.findIndex(d => d.getTime() === dayDate.getTime());
-            if (index === -1) {
-                absenceModalState.selectedDays.push(dayDate);
-            } else {
-                absenceModalState.selectedDays.splice(index, 1);
-            }
-            absenceModalState.selectedDays.sort((a, b) => a.getTime() - b.getTime());
-            document.getElementById('btn-advance-to-step3').disabled = absenceModalState.selectedDays.length === 0;
-            renderCalendar();
-        }
-
-        function updateSelectedDaysDisplay() {
-            const display = document.getElementById('selected-days-display');
-            if (absenceModalState.selectedDays.length === 0) {
-                display.innerText = 'None selected yet';
-                return;
-            }
-
-            const dayNames = absenceModalState.selectedDays.map(d => {
-                return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-            }).join(', ');
-
-            display.innerText = dayNames;
-        }
-
-        function renderScheduleAndSuggestions() {
-            const teacherId = absenceModalState.selectedTeacherId;
-            const teacher = state.teachers.find(t => t.id === teacherId);
-            const scheduleList = document.getElementById('teacher-schedule-list');
-            const subsList = document.getElementById('substitutes-list');
-
-            scheduleList.innerHTML = '';
-            subsList.innerHTML = '';
-
-            // Get all classes for selected days
-            const classesForAbsence = [];
-            absenceModalState.selectedDays.forEach(absenceDate => {
-                const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][absenceDate.getDay()];
-                
-                const dayClasses = state.schedules.filter(s => s.teacherId === teacherId && s.day === dayName);
-                dayClasses.forEach(cls => {
-                    classesForAbsence.push({
-                        ...cls,
-                        absenceDate: absenceDate.toISOString().split('T')[0],
-                        dayName
-                    });
-                });
-            });
-
-            if (classesForAbsence.length === 0) {
-                scheduleList.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No classes scheduled for selected days.</p>';
-                subsList.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Select classes to assign substitutes.</p>';
-                return;
-            }
-
-            // Render schedule on left
-            classesForAbsence.forEach(cls => {
-                const card = document.createElement('div');
-                card.style.cssText = 'padding: 10px; background: var(--sub-card-bg); border-radius: 6px; border-left: 4px solid var(--primary);';
-                card.innerHTML = `
-                    <div style="font-weight: 600; margin-bottom: 4px;">${cls.className}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2px;">${format12HourTime(cls.start)} - ${format12HourTime(cls.end)}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">${cls.dayName}, ${cls.absenceDate}</div>
-                `;
-                card.onclick = () => renderSubstituteSuggestions(cls, subsList);
-                scheduleList.appendChild(card);
-            });
-
-            // Pre-select first class
-            if (classesForAbsence.length > 0) {
-                renderSubstituteSuggestions(classesForAbsence[0], subsList);
-            }
-        }
-
-        function renderSubstituteSuggestions(classInfo, container) {
-            const dateStr = classInfo.absenceDate;
-            const candidates = getAvailableSubstitutes(classInfo.id, absenceModalState.selectedTeacherId, classInfo.dayName, dateStr);
-
-            container.innerHTML = `<strong style="display: block; margin-bottom: 12px; font-size: 0.95rem;">Substitutes for ${classInfo.className}</strong>`;
-
-            if (candidates.length === 0) {
-                container.innerHTML += '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No available substitutes</div>';
-                return;
-            }
-
-            candidates.forEach((cand, idx) => {
-                const breakdown = getTeacherWorkloadBreakdown(cand.teacher.id);
-                const isRecommended = idx === 0;
-                const isSelected = absenceModalState.substitutes[classInfo.id] === cand.teacher.id;
-
-                const card = document.createElement('div');
-                card.className = `substitute-card ${isRecommended ? 'recommended' : ''} ${isSelected ? 'selected' : ''}`;
-                card.onclick = () => {
-                    absenceModalState.substitutes[classInfo.id] = cand.teacher.id;
-                    renderSubstituteSuggestions(classInfo, container);
-                };
-
-                let flagsHtml = '';
-                if (cand.subsTodayCount >= state.settings.maxSubDaily) {
-                    flagsHtml += `<div style="font-size:0.75rem; color:#991b1b; background:#fee2e2; padding:2px 4px; border-radius:3px; display:inline-block;">⚠️ At Limit</div>`;
-                } else if (cand.consecutiveClasses >= 2) {
-                    flagsHtml += `<div style="font-size:0.75rem; color:#92400e; background:#fef3c7; padding:2px 4px; border-radius:3px; display:inline-block;">⚠️ Fatigued</div>`;
-                }
-
-                card.innerHTML = `
-                    <div class="sub-card-name">${cand.teacher.name}</div>
-                    <div class="sub-card-dept">${cand.teacher.dept}</div>
-                    <div class="sub-card-workload">Earned: ${formatMinutes(breakdown.earnedMins)}</div>
-                    ${flagsHtml}
-                `;
-
-                container.appendChild(card);
-            });
-        }
-
-        function renderIntegratedSlipPreview() {
-            const teacher = state.teachers.find(t => t.id === absenceModalState.selectedTeacherId);
-            const container = document.getElementById('integrated-slip-preview');
-
-            // Collect all records
-            const allRecords = [];
-            const classesForAbsence = [];
-            
-            absenceModalState.selectedDays.forEach(absenceDate => {
-                const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][absenceDate.getDay()];
-                const dateStr = absenceDate.toISOString().split('T')[0];
-                
-                const dayClasses = state.schedules.filter(s => s.teacherId === absenceModalState.selectedTeacherId && s.day === dayName);
-                dayClasses.forEach(cls => {
-                    classesForAbsence.push({
-                        ...cls,
-                        absenceDate: dateStr,
-                        dayName
-                    });
-
-                    const subTeacherId = absenceModalState.substitutes[cls.id] || 'NO_AVAILABLE';
-                    allRecords.push({
-                        classId: cls.id,
-                        absenceDate: dateStr,
-                        day: dayName,
-                        subTeacherId
-                    });
-                });
-            });
-
-            let tableRows = allRecords.map(r => {
-                const cls = state.schedules.find(s => s.id === r.classId);
-                const sub = state.teachers.find(t => t.id === r.subTeacherId);
-
-                let subBadge = '';
-                if (r.subTeacherId === 'NO_AVAILABLE' || !sub) {
-                    subBadge = `<span class="badge badge-danger">NO AVAILABLE</span>`;
-                } else {
-                    subBadge = `<span class="badge badge-success">${sub.name}</span>`;
-                }
-
-                return `
-                    <tr>
-                        <td><strong>${cls ? cls.className : 'N/A'}</strong></td>
-                        <td>${r.absenceDate} (${r.day})</td>
-                        <td>${cls ? format12HourTime(cls.start) + ' - ' + format12HourTime(cls.end) : '-'}</td>
-                        <td>${subBadge}</td>
-                        <td>${cls ? formatMinutes(cls.duration) : '-'}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            const formattedDate = absenceModalState.selectedDays.length === 1 
-                ? absenceModalState.selectedDays[0].toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-                : `${absenceModalState.selectedDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${absenceModalState.selectedDays[absenceModalState.selectedDays.length - 1].toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`;
-
-            container.innerHTML = `
-                <div class="slip-header">
-                    <h2 style="margin-bottom: 2px;">OFFICIAL SUBSTITUTION COVERAGE SLIP</h2>
-                    <p style="font-size:0.95rem; color: #1e293b; margin-top:4px;">
-                        Date(s) of Substitution: <strong>${formattedDate}</strong>
-                    </p>
-                </div>
-                <div style="margin-bottom: 16px; font-size:0.95rem;">
-                    <p><strong>Absent Teacher:</strong> ${teacher ? teacher.name : 'Unknown'} (${teacher ? teacher.dept : '-'})</p>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Class / Subject</th>
-                            <th>Date & Day</th>
-                            <th>Time Slot</th>
-                            <th>Assigned Substitute</th>
-                            <th>Duration</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-
-                <div style="margin-top: 24px; display: flex; justify-content: space-between; font-size: 0.85rem; padding-top: 10px;">
-                    <div>_______________________<br>School Coordinator</div>
-                    <div>_______________________<br>Principal / Head Teacher</div>
-                </div>
-            `;
-
-            // Store records for saving
-            absenceModalState.pendingRecords = allRecords;
-        }
-
-        function finalizeAndSaveRecord() {
-            const teacherId = absenceModalState.selectedTeacherId;
-            const absentTeacher = state.teachers.find(t => t.id === teacherId);
-
-            if (!absenceModalState.pendingRecords || absenceModalState.pendingRecords.length === 0) {
-                alert('No classes to record.');
-                return;
-            }
-
-            const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-            const recordsToSave = absenceModalState.pendingRecords.map(r => ({
-                id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                batchId,
-                day: r.day,
-                subDate: r.absenceDate,
-                absentTeacherId: teacherId,
-                classId: r.classId,
-                subTeacherId: r.subTeacherId,
-                issuedTimestamp: new Date().toLocaleString()
-            }));
-
-            state.coverage.push(...recordsToSave);
-            saveData(true, `Recorded substitution coverage for absent teacher ${absentTeacher ? absentTeacher.name : 'Unknown'}`);
-
-            closeRecordAbsenceModal();
-
-            showToast('SUB RECORDED', `Substitution saved for ${absentTeacher ? absentTeacher.name : 'Teacher'}.`, 'sub', () => {
-                openPreviewFromBatch(batchId);
-            });
+            document.getElementById('absent-date-input').value = new Date().toISOString().split('T')[0];
+            document.getElementById('whole-day-schedule-container').innerHTML = '';
+            document.getElementById('btn-submit-sub').style.display = 'none';
         }
 
         function closeEditBlockModal() {
@@ -6472,22 +5900,17 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             });
         }
 
-        function getSortedTeachers() {
-            return [...state.teachers].sort((a, b) => a.name.localeCompare(b.name));
-        }
-
         function renderAll() {
             const absentSelect = document.getElementById('absent-teacher-select');
             const schedTeacherSelect = document.getElementById('schedule-teacher-select');
             const matrixFilterSelect = document.getElementById('matrix-teacher-filter');
 
             const currentFilterVal = matrixFilterSelect.value;
-            const sortedTeachers = getSortedTeachers();
 
             [absentSelect, schedTeacherSelect].forEach(select => {
                 const currentVal = select.value;
                 select.innerHTML = '<option value="">Select Teacher...</option>';
-                sortedTeachers.forEach(t => {
+                state.teachers.forEach(t => {
                     const opt = document.createElement('option');
                     opt.value = t.id;
                     opt.textContent = `${t.name} (${t.dept})`;
@@ -6497,7 +5920,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             });
 
             matrixFilterSelect.innerHTML = '<option value="ALL">Show All Teachers</option>';
-            sortedTeachers.forEach(t => {
+            state.teachers.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.textContent = `${t.name} (${t.dept})`;
