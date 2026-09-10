@@ -1757,92 +1757,38 @@
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="card">
-                    <h2>Record Absent Teacher</h2>
-                    <form id="absence-form" onsubmit="handleAbsenceSubmit(event)">
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label>Date of Absence / Substitution</label>
-                                <input type="date" id="absent-date-input" required onchange="syncDayFromDate()">
-                            </div>
-                            <div class="form-group">
-                                <label>Day of Week</label>
-                                <select id="absent-day-select" required onchange="renderWholeDaySchedule()">
-                                    <option value="Monday">Monday</option>
-                                    <option value="Tuesday">Tuesday</option>
-                                    <option value="Wednesday">Wednesday</option>
-                                    <option value="Thursday">Thursday</option>
-                                    <option value="Friday">Friday</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Absent Teacher</label>
-                            <select id="absent-teacher-select" required onchange="renderWholeDaySchedule()">
-                                <option value="">Select Teacher...</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="background: var(--sub-card-bg); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
-                            <label style="font-weight: 700; margin-bottom: 8px;">
-                                Absence Scope / Duration:
-                                <span class="help-icon" tabindex="0">?
-                                    <span class="help-tooltip-popup">
-                                        <strong>Full vs. Partial Absence</strong>
-                                        • <em>Full Day:</em> Replaces all classes.<br>
-                                        • <em>Partial:</em> Lets you toggle individual periods to sub.
-                                        <br><span class="help-tooltip-link" onclick="switchTab('help-tab')">Open Help & Guide →</span>
-                                    </span>
-                                </span>
-                            </label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="radio" name="absenceScope" value="FULL" checked onchange="toggleAbsenceScope(this.value)"> 
-                                    Full Day Absence
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="radio" name="absenceScope" value="PARTIAL" onchange="toggleAbsenceScope(this.value)"> 
-                                    Partial / Half Day Absence
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="whole-day-schedule-container" style="margin-top: 16px;"></div>
-
-                        <button type="submit" id="btn-submit-sub" class="btn" style="width: 100%; display: none;">Assign Substitute & Record</button>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <div class="flex-between" style="margin-bottom:8px;">
-                        <h2>Substitute Workload Leaderboard
-                            <span class="help-icon" tabindex="0">?
-                                <span class="help-tooltip-popup">
-                                    <strong>Workload Leaderboard</strong>
-                                    Sub credits are strictly credited once date & class end time pass. Future/pending hours show as Incoming Credits!
-                                    <br><span class="help-tooltip-link" onclick="switchTab('help-tab')">Open Help & Guide →</span>
-                                </span>
+            <div class="card">
+                <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                    <h2>Substitute Workload Leaderboard
+                        <span class="help-icon" tabindex="0">?
+                            <span class="help-tooltip-popup">
+                                <strong>Workload Leaderboard</strong>
+                                Sub credits are strictly credited once date & class end time pass. Future/pending hours show as Incoming Credits!
+                                <br><span class="help-tooltip-link" onclick="switchTab('help-tab')">Open Help & Guide →</span>
                             </span>
-                        </h2>
+                        </span>
+                    </h2>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <button class="btn btn-warning" onclick="openRecordAbsenceModal()">
+                            <span style="font-size:1.1rem;">➕</span> Record Absent Teacher
+                        </button>
                         <button class="btn btn-secondary btn-icon-only" onclick="openFullLeaderboardPrintModal()" title="Print Leaderboard">🖨️</button>
                     </div>
-                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">💡 Click any teacher to view their detailed substitution log & status.</p>
-                    <div class="leaderboard-table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Teacher Name</th>
-                                    <th>Earned Sub Hours</th>
-                                    <th>Incoming Credits</th>
-                                    <th>Classes</th>
-                                    <th style="text-align:right;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="workload-table-body"></tbody>
-                        </table>
-                    </div>
+                </div>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">💡 Click any teacher to view their detailed substitution log & status.</p>
+                <div class="leaderboard-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Teacher Name</th>
+                                <th>Earned Sub Hours</th>
+                                <th>Incoming Credits</th>
+                                <th>Classes</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workload-table-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -2793,6 +2739,72 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
                 <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
                 <button class="btn btn-danger" onclick="executeBatchArchive()">Yes, Revert Hours & Archive</button>
             </div>
+        </div>
+    </div>
+
+    <div id="record-absence-modal" class="modal-overlay">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2>Record Absent Teacher & Assign Substitute</h2>
+                <button class="close-btn" onclick="closeRecordAbsenceModal()">&times;</button>
+            </div>
+            
+            <form id="absence-form" onsubmit="handleAbsenceSubmit(event)">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Date of Absence / Substitution</label>
+                        <input type="date" id="absent-date-input" required onchange="syncDayFromDate()">
+                    </div>
+                    <div class="form-group">
+                        <label>Day of Week</label>
+                        <select id="absent-day-select" required onchange="renderWholeDaySchedule()">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Absent Teacher</label>
+                    <select id="absent-teacher-select" required onchange="renderWholeDaySchedule()">
+                        <option value="">Select Teacher...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="background: var(--sub-card-bg); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <label style="font-weight: 700; margin-bottom: 8px;">
+                        Absence Scope / Duration:
+                        <span class="help-icon" tabindex="0">?
+                            <span class="help-tooltip-popup">
+                                <strong>Full vs. Partial Absence</strong>
+                                • <em>Full Day:</em> Replaces all classes.<br>
+                                • <em>Partial:</em> Lets you toggle individual periods to sub.
+                                <br><span class="help-tooltip-link" onclick="switchTab('help-tab')">Open Help & Guide →</span>
+                            </span>
+                        </span>
+                    </label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="radio" name="absenceScope" value="FULL" checked onchange="toggleAbsenceScope(this.value)"> 
+                            Full Day Absence
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="radio" name="absenceScope" value="PARTIAL" onchange="toggleAbsenceScope(this.value)"> 
+                            Partial / Half Day Absence
+                        </label>
+                    </div>
+                </div>
+
+                <div id="whole-day-schedule-container" style="margin-top: 16px;"></div>
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecordAbsenceModal()">Cancel</button>
+                    <button type="submit" id="btn-submit-sub" class="btn" style="display: none;">Assign Substitute & Record</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -4754,17 +4766,19 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
 
         function confirmAndSaveRecord() {
             let savedBatchId = null;
+            let absentTeacher = null;
             if (pendingRecordsToSave && pendingRecordsToSave.length > 0) {
                 state.coverage.push(...pendingRecordsToSave);
                 const firstRec = pendingRecordsToSave[0];
                 savedBatchId = firstRec.batchId;
-                const absentTeacher = state.teachers.find(t => t.id === firstRec.absentTeacherId);
+                absentTeacher = state.teachers.find(t => t.id === firstRec.absentTeacherId);
                 
                 saveData(true, `Recorded substitution coverage for absent teacher ${absentTeacher ? absentTeacher.name : 'Unknown'}`);
                 pendingRecordsToSave = null;
             }
             
             closePreviewModal();
+            closeRecordAbsenceModal();
 
             showToast('SUB RECORDED', `Substitution saved for ${absentTeacher ? absentTeacher.name : 'Teacher'}.`, 'sub', () => {
                 if (savedBatchId) openPreviewFromBatch(savedBatchId);
@@ -5075,6 +5089,21 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             document.getElementById('edit-class-end').value = block.end;
 
             document.getElementById('edit-block-modal').classList.add('active');
+        }
+
+        function openRecordAbsenceModal() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('absent-date-input').value = todayStr;
+            syncDayFromDate();
+            document.getElementById('record-absence-modal').classList.add('active');
+        }
+
+        function closeRecordAbsenceModal() {
+            document.getElementById('record-absence-modal').classList.remove('active');
+            document.getElementById('absence-form').reset();
+            document.getElementById('absent-date-input').value = new Date().toISOString().split('T')[0];
+            document.getElementById('whole-day-schedule-container').innerHTML = '';
+            document.getElementById('btn-submit-sub').style.display = 'none';
         }
 
         function closeEditBlockModal() {
