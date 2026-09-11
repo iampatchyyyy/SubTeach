@@ -5288,6 +5288,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             selectedDays: [],
             currentWeekStart: new Date(),
             substitutes: {}, // classId -> selected subTeacherId
+            currentSelectedClass: null, // Track which class is currently selected for substitute assignment
             pendingRecords: null
         };
 
@@ -5303,6 +5304,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
                 selectedDays: [],
                 currentWeekStart: getMonday(new Date()),
                 substitutes: {},
+                currentSelectedClass: null,
                 pendingRecords: null
             };
 
@@ -5320,6 +5322,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
                 selectedDays: [],
                 currentWeekStart: new Date(),
                 substitutes: {},
+                currentSelectedClass: null,
                 pendingRecords: null
             };
         }
@@ -5441,27 +5444,62 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             const dateRange = `${weekStart.getDate()} - ${weekEnd.getDate()} ${monthLabel}`;
             document.getElementById('calendar-week-label').innerText = dateRange;
 
-            // Create day buttons for Mon-Fri only
+            // Create day buttons for Mon-Fri with improved styling and range detection
+            const selectedDayTimes = absenceModalState.selectedDays.map(d => d.getTime());
+            
             for (let i = 0; i < 5; i++) {
                 const dayDate = new Date(weekStart);
                 dayDate.setDate(dayDate.getDate() + i);
                 dayDate.setHours(0, 0, 0, 0);
+                const dayTime = dayDate.getTime();
 
                 const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'short' });
                 const dayNum = dayDate.getDate();
-                const isToday = dayDate.getTime() === today.getTime();
-                const isSelected = absenceModalState.selectedDays.some(d => d.getTime() === dayDate.getTime());
+                const isToday = dayTime === today.getTime();
+                const isSelected = selectedDayTimes.includes(dayTime);
                 const isPast = dayDate < today;
+
+                // Check if this day is in selected range for visual highlighting
+                let isInRange = false;
+                if (absenceModalState.selectedDays.length > 1) {
+                    const minTime = Math.min(...selectedDayTimes);
+                    const maxTime = Math.max(...selectedDayTimes);
+                    isInRange = dayTime >= minTime && dayTime <= maxTime && !isSelected;
+                }
 
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = `calendar-day-button ${isSelected ? 'selected' : ''} ${isPast ? 'outside-range' : ''}`;
+                btn.className = `calendar-day-button ${isSelected ? 'selected' : ''} ${isInRange ? 'in-range' : ''} ${isPast ? 'outside-range' : ''}`;
                 btn.disabled = isPast;
-                btn.innerHTML = `<div style="font-size:0.8rem; opacity:0.7;">${dayName}</div><div style="font-size:1.2rem;">${dayNum}</div>`;
+                btn.style.cssText = `
+                    padding: 12px 8px;
+                    border-radius: 8px;
+                    border: 2px solid var(--border);
+                    background: var(--card-bg);
+                    cursor: ${isPast ? 'not-allowed' : 'pointer'};
+                    transition: all 0.2s ease;
+                    font-weight: 500;
+                `;
+                
+                if (isSelected) {
+                    btn.style.cssText += `
+                        background: var(--primary);
+                        color: white;
+                        border-color: var(--primary);
+                        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+                    `;
+                } else if (isInRange) {
+                    btn.style.cssText += `
+                        background: rgba(37, 99, 235, 0.15);
+                        border-color: var(--primary);
+                        color: var(--primary);
+                    `;
+                }
+                
+                btn.innerHTML = `<div style="font-size:0.8rem; opacity:0.7;">${dayName}</div><div style="font-size:1.1rem; font-weight:700;">${dayNum}</div>`;
                 
                 if (isToday) {
-                    btn.style.borderColor = 'var(--primary)';
-                    btn.innerHTML += '<div style="font-size:0.7rem; opacity:0.7;">Today</div>';
+                    btn.innerHTML += '<div style="font-size:0.65rem; opacity:0.8; margin-top: 2px;">Today</div>';
                 }
 
                 btn.onclick = (e) => {
@@ -5531,16 +5569,66 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
                 return;
             }
 
-            // Render schedule on left
-            classesForAbsence.forEach(cls => {
+            // Render schedule on left with selection state
+            classesForAbsence.forEach((cls, idx) => {
                 const card = document.createElement('div');
-                card.style.cssText = 'padding: 10px; background: var(--sub-card-bg); border-radius: 6px; border-left: 4px solid var(--primary);';
+                const isFirstItem = idx === 0;
+                const isSelected = absenceModalState.currentSelectedClass === cls.id;
+                
+                // Store first class for pre-selection
+                if (isFirstItem) {
+                    absenceModalState.currentSelectedClass = cls.id;
+                }
+                
+                card.style.cssText = `
+                    padding: 12px;
+                    background: ${isSelected ? 'var(--primary)' : 'var(--sub-card-bg)'};
+                    border-radius: 6px;
+                    border-left: 4px solid var(--primary);
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    ${isSelected ? 'color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);' : ''}
+                `;
+                
+                card.onmouseenter = function() {
+                    if (!isSelected) {
+                        this.style.background = 'var(--primary)';
+                        this.style.color = 'white';
+                        this.style.transform = 'translateX(4px)';
+                        this.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.2)';
+                    }
+                };
+                
+                card.onmouseleave = function() {
+                    if (!isSelected) {
+                        this.style.background = 'var(--sub-card-bg)';
+                        this.style.color = 'var(--text)';
+                        this.style.transform = 'translateX(0)';
+                        this.style.boxShadow = 'none';
+                    }
+                };
+                
                 card.innerHTML = `
                     <div style="font-weight: 600; margin-bottom: 4px;">${cls.className}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2px;">${format12HourTime(cls.start)} - ${format12HourTime(cls.end)}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">${cls.dayName}, ${cls.absenceDate}</div>
+                    <div style="font-size: 0.85rem; ${isSelected ? 'color: rgba(255,255,255,0.9);' : 'color: var(--text-muted);'} margin-bottom: 2px;">${format12HourTime(cls.start)} - ${format12HourTime(cls.end)}</div>
+                    <div style="font-size: 0.8rem; ${isSelected ? 'color: rgba(255,255,255,0.8);' : 'color: var(--text-muted);'}">${cls.dayName}, ${cls.absenceDate}</div>
+                    ${isSelected ? '<div style="font-size: 0.75rem; margin-top: 6px; font-weight: 500;">✓ Select substitute below</div>' : ''}
                 `;
-                card.onclick = () => renderSubstituteSuggestions(cls, subsList);
+                
+                card.onclick = () => {
+                    absenceModalState.currentSelectedClass = cls.id;
+                    renderSubstituteSuggestions(cls, subsList);
+                    // Re-render all schedule items to update selection state
+                    const allCards = scheduleList.querySelectorAll('div');
+                    allCards.forEach(c => {
+                        const cardText = c.textContent;
+                        if (c.style.backgroundColor === 'var(--primary)' || c.style.background === 'var(--primary)') {
+                            // This is the previously selected one, reset it
+                        }
+                    });
+                    renderScheduleAndSuggestions(); // Re-render to update UI
+                };
+                
                 scheduleList.appendChild(card);
             });
 
@@ -5564,10 +5652,46 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             candidates.forEach((cand, idx) => {
                 const breakdown = getTeacherWorkloadBreakdown(cand.teacher.id);
                 const isRecommended = idx === 0;
+                
+                // Auto-select recommended substitute if not already assigned
+                if (isRecommended && !absenceModalState.substitutes[classInfo.id]) {
+                    absenceModalState.substitutes[classInfo.id] = cand.teacher.id;
+                }
+                
                 const isSelected = absenceModalState.substitutes[classInfo.id] === cand.teacher.id;
 
                 const card = document.createElement('div');
+                card.style.cssText = `
+                    padding: 12px;
+                    border-radius: 8px;
+                    border: 2px solid ${isSelected ? 'var(--success)' : 'var(--border)'};
+                    background: ${isSelected ? 'rgba(16, 185, 129, 0.08)' : 'var(--card-bg)'};
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    gap: 12px;
+                `;
+                
                 card.className = `substitute-card ${isRecommended ? 'recommended' : ''} ${isSelected ? 'selected' : ''}`;
+                
+                card.onmouseenter = function() {
+                    if (!isSelected) {
+                        this.style.borderColor = 'var(--primary)';
+                        this.style.transform = 'translateY(-2px)';
+                        this.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.2)';
+                    }
+                };
+                
+                card.onmouseleave = function() {
+                    if (!isSelected) {
+                        this.style.borderColor = 'var(--border)';
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = 'none';
+                    }
+                };
+                
                 card.onclick = () => {
                     absenceModalState.substitutes[classInfo.id] = cand.teacher.id;
                     renderSubstituteSuggestions(classInfo, container);
@@ -5575,16 +5699,36 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
 
                 let flagsHtml = '';
                 if (cand.subsTodayCount >= state.settings.maxSubDaily) {
-                    flagsHtml += `<div style="font-size:0.75rem; color:#991b1b; background:#fee2e2; padding:2px 4px; border-radius:3px; display:inline-block;">⚠️ At Limit</div>`;
+                    flagsHtml += `<div style="font-size:0.7rem; color:#991b1b; background:#fee2e2; padding:3px 6px; border-radius:4px; display:inline-block; margin-top: 4px;">⚠️ At Daily Limit</div>`;
                 } else if (cand.consecutiveClasses >= 2) {
-                    flagsHtml += `<div style="font-size:0.75rem; color:#92400e; background:#fef3c7; padding:2px 4px; border-radius:3px; display:inline-block;">⚠️ Fatigued</div>`;
+                    flagsHtml += `<div style="font-size:0.7rem; color:#92400e; background:#fef3c7; padding:3px 6px; border-radius:4px; display:inline-block; margin-top: 4px;">⚠️ Consecutive Classes</div>`;
                 }
 
+                const leftContent = `
+                    <div style="flex: 1;">
+                        <div class="sub-card-name" style="font-weight: 600; color: var(--text); margin-bottom: 4px;">${cand.teacher.name}</div>
+                        <div class="sub-card-dept" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px;">${cand.teacher.dept}</div>
+                        <div class="sub-card-workload" style="font-size: 0.8rem; color: var(--text-muted);">Earned: <strong>${formatMinutes(breakdown.earnedMins)}</strong></div>
+                        ${flagsHtml}
+                    </div>
+                `;
+
+                const radioCheckmark = isSelected ? `
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--success); border: 2px solid var(--success); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <div style="color: white; font-weight: bold; font-size: 0.85rem;">✓</div>
+                    </div>
+                ` : `
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: transparent; border: 2px solid var(--border); flex-shrink: 0;"></div>
+                `;
+
+                const recommendedBadge = isRecommended ? `<div style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 6px; border-radius: 3px; white-space: nowrap;">⭐ Recommended</div>` : '';
+
                 card.innerHTML = `
-                    <div class="sub-card-name">${cand.teacher.name}</div>
-                    <div class="sub-card-dept">${cand.teacher.dept}</div>
-                    <div class="sub-card-workload">Earned: ${formatMinutes(breakdown.earnedMins)}</div>
-                    ${flagsHtml}
+                    ${leftContent}
+                    <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                        ${recommendedBadge}
+                        ${radioCheckmark}
+                    </div>
                 `;
 
                 container.appendChild(card);
@@ -5683,34 +5827,68 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
         }
 
         function finalizeAndSaveRecord() {
+            // Validation: Check teacher selection
             const teacherId = absenceModalState.selectedTeacherId;
             const absentTeacher = state.teachers.find(t => t.id === teacherId);
 
-            if (!absenceModalState.pendingRecords || absenceModalState.pendingRecords.length === 0) {
-                alert('No classes to record.');
+            if (!teacherId || !absentTeacher) {
+                showToast('ERROR', 'Please select a teacher before saving.', 'error');
+                showStep(1);
                 return;
             }
 
-            const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-            const recordsToSave = absenceModalState.pendingRecords.map(r => ({
-                id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                batchId,
-                day: r.day,
-                subDate: r.absenceDate,
-                absentTeacherId: teacherId,
-                classId: r.classId,
-                subTeacherId: r.subTeacherId,
-                issuedTimestamp: new Date().toLocaleString()
-            }));
+            // Validation: Check pending records
+            if (!absenceModalState.pendingRecords || absenceModalState.pendingRecords.length === 0) {
+                showToast('ERROR', 'No classes to record. Please select a date with scheduled classes.', 'error');
+                showStep(2);
+                return;
+            }
 
-            state.coverage.push(...recordsToSave);
-            saveData(true, `Recorded substitution coverage for absent teacher ${absentTeacher ? absentTeacher.name : 'Unknown'}`);
+            // Validation: Check all classes have assigned substitutes
+            const unassignedClasses = absenceModalState.pendingRecords.filter(r => !absenceModalState.substitutes[r.classId]);
+            if (unassignedClasses.length > 0) {
+                showToast('WARNING', `${unassignedClasses.length} class(es) without assigned substitute. Proceeding anyway...`, 'warning');
+            }
 
-            closeRecordAbsenceModal();
+            // Validation: Ensure state is properly synced
+            if (window.syncLocalVariableWithWindowState) {
+                window.syncLocalVariableWithWindowState();
+            }
 
-            showToast('SUB RECORDED', `Substitution saved for ${absentTeacher ? absentTeacher.name : 'Teacher'}.`, 'sub', () => {
-                openPreviewFromBatch(batchId);
-            });
+            try {
+                const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                const timestamp = new Date().toLocaleString();
+                
+                const recordsToSave = absenceModalState.pendingRecords.map(r => ({
+                    id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                    batchId,
+                    day: r.day,
+                    subDate: r.absenceDate,
+                    absentTeacherId: teacherId,
+                    classId: r.classId,
+                    subTeacherId: absenceModalState.substitutes[r.classId] || 'NO_AVAILABLE',
+                    issuedTimestamp: timestamp
+                }));
+
+                // Add records to state
+                if (!state.coverage) state.coverage = [];
+                state.coverage.push(...recordsToSave);
+
+                // Save with proper Firebase handling
+                saveData(true, `Recorded substitution coverage for absent teacher ${absentTeacher.name} (${recordsToSave.length} classes)`);
+
+                // Close modal
+                closeRecordAbsenceModal();
+
+                // Show success notification
+                showToast('✓ SUBSTITUTIONS RECORDED', `Successfully saved ${recordsToSave.length} class assignment(s) for ${absentTeacher.name}.`, 'sub', () => {
+                    openPreviewFromBatch(batchId);
+                });
+
+            } catch (error) {
+                console.error('Error saving absence record:', error);
+                showToast('ERROR', `Failed to save record: ${error.message}`, 'error');
+            }
         }
 
         function closeEditBlockModal() {
