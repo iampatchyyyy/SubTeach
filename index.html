@@ -4533,7 +4533,15 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
         }
 
         function syncDayFromDate() {
-            const val = document.getElementById('absent-date-input').value;
+            const dateInput = document.getElementById('absent-date-input');
+            const daySelect = document.getElementById('absent-day-select');
+            
+            // If modal elements don't exist, skip (we're using new 4-step modal now)
+            if (!dateInput || !daySelect) {
+                return;
+            }
+            
+            const val = dateInput.value;
             if (!val) return;
             const dateObj = new Date(val + 'T00:00:00');
             const dayIdx = dateObj.getDay();
@@ -4542,7 +4550,7 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
             const selectedDay = dayMap[dayIdx];
 
             if (DAYS.includes(selectedDay)) {
-                document.getElementById('absent-day-select').value = selectedDay;
+                daySelect.value = selectedDay;
             }
             renderWholeDaySchedule();
             renderDashboardCounters();
@@ -4740,11 +4748,23 @@ John Smith, SHS / JHS, Tuesday, Chemistry - Section B, 09:00, 09:45</div>
         }
 
         function renderWholeDaySchedule() {
-            const teacherId = document.getElementById('absent-teacher-select').value;
-            const day = document.getElementById('absent-day-select').value;
-            const selectedDate = document.getElementById('absent-date-input').value;
+            // This function is from old modal design - safe to skip if elements don't exist
+            const teacherSelect = document.getElementById('absent-teacher-select');
+            const daySelect = document.getElementById('absent-day-select');
+            const dateInput = document.getElementById('absent-date-input');
+            
+            // If modal elements don't exist, skip (we're using new 4-step modal now)
+            if (!teacherSelect || !daySelect || !dateInput) {
+                return;
+            }
+            
+            const teacherId = teacherSelect.value;
+            const day = daySelect.value;
+            const selectedDate = dateInput.value;
             const container = document.getElementById('whole-day-schedule-container');
             const submitBtn = document.getElementById('btn-submit-sub');
+
+            if (!container || !submitBtn) return;
 
             container.innerHTML = '';
             submitBtn.style.display = 'none';
